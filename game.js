@@ -1,22 +1,22 @@
-(function(){
 var spaceCanvas = document.getElementById('space');
 var context = spaceCanvas.getContext('2d');
 var animate = null;
-var federation = [];
-var bullets = [];
+var borgShip=null;
+var federation=null;
 
 function collides(a, b) {
   return a.x < b.x + b.width && a.x + a.width > b.x &&
          a.y < b.y + b.height && a.y + a.height > b.y;
 };
 
-function Entity(x,y,width,height,speed,color){
+function Entity(x,y,width,height,speed,color,imageLocation){
   this.x = x;
   this.y = y;
   this.width = width;
   this.height = height;
   this.speed = speed;
   this.color = color;
+  this.imageLocation = imageLocation;
 };
 Entity.prototype.draw = function(){
   context.beginPath();
@@ -28,101 +28,99 @@ Entity.prototype.draw = function(){
 Entity.prototype.destroy = function(){
   context.clearRect(this.x, this.y, this.width, this.height);
 }
-
-borg = {x: 0, y:0, width: 400, height: 400, imageLocation: 'images/borg.png'};
-borgHealth = new Entity(spaceCanvas.width-200, 30, 200, 30, 10, 'green');
-
-  // loop to create federation ships
-for (i=0; i<5; i++){
-  federation[i] = new Entity(600, (i+1)*75, 50, 10, 0.03, 'white');
-  federation[i+5] = new Entity((i+1)*75, 600, 10, 50, 0.03, 'white');
-};
-
+enterprise = new Entity(600,200,200,10,1,null, 'images/starfleet.png');
+borg = new Entity(0, 0, 400, 400, 0, null, 'images/borg.png');
+borgHealth = new Entity(spaceCanvas.width-200, 30, 200, 30, 10, 'green', null);
 
 function tractorBeam(context){
-  federation.forEach(function(ship){
     context.beginPath();
     context.moveTo(220,95);
-    context.lineTo(ship.x+(ship.width/2), ship.y+(ship.height/2));
+    context.lineTo(federation.x+(federation.width/2), federation.y+(federation.height/2));
     context.lineWidth = 3;
     context.strokeStyle = 'green';
     context.stroke();
-  })
 };
 
-drawBorg = function() {
+drawBorg = function(){
   borgShip = new Image();
   borgShip.src = borg.imageLocation;
   borgShip.onload = function(){
-    context.drawImage(borgShip, borg.x, borg.y);
+    context.drawImage(borgShip,borg.x,borg.y);
+  }
+};
+drawFed = function(){
+  federation = new Image();
+  federation.src = enterprise.imageLocation;
+  federation.onload = function(){
+    context.drawImage(federation,enterprise.x,enterprise.y);
   }
 };
 
 function fireMissile(){
-  federation.forEach(function(ship){
-    missile = new Entity(ship.x-(ship.width/2), ship.y-(ship.height/2), 10,10,0.05, 'white');
-    bullets.push(missile);
-  })
-    moveMissile();
+  missile = new Entity(enterprise.x, enterprise.y-(enterprise.height/2), 10,10,0.05,'white',null);
+  while(collides(missile,borgShip)!=true){
+    movement(missile, 10)(-15,0);
+  }
+    missile.destroy();
+    loseHealth();
 };
 
 function moveMissile(){
-  if(bullets.length>0){
-    for (var i = 0; i < 5; i++){
-      if(collides(bullets[i],borgShip)===true || collides(bullets[i+5], borgShip)===true){
-        bullets.forEach(function(pew){
-          pew.destroy();
-        })
-        clearInterval(animate);
-        bullets.length = 0;
-        if (borgHealth.width < 50){
-          borgAttack();
-        }
-        else{
-          loseHealth();
-        }
-      }
-      else{
-        movement(bullets[i], 10)(-10,0);
-        movement(bullets[i+5], 10)(0,-10);
-        animate = setInterval(moveMissile, 50);
-      }
-    }
-}
+  if(collides(missile,borgShip)===true){
+    missile.destroy();
+    loseHealth();
+  }
+  else{
+    movement(missile, 10)(-15,0);
+  }
 };
 function loseHealth(){
-  borgHealth.destroy();
-  if (borgHealth.width < 100){
-    borgHealth.color = 'red';
+  if (borgHealth.width > 50){
+    borgHealth.destroy();
+    if (borgHealth.width < 100){
+      borgHealth.color = 'red';
+    }
+    borgHealth.width -= borgHealth.speed;
+    borgHealth.draw();
   }
-  borgHealth.width -= borgHealth.speed;
-  borgHealth.draw();
-}
+  else{
+    borgAttack();
+  }
+};
 
-function detectSpace(e){
-  if(e.keyCode === 32){
-    fireMissile();
+function detectKey(e){
+  switch(e.keyCode){
+    case(37):
+      return enterprise.x -= enterprise.speed;
+      break;
+    case(39):
+      enterprise.x += enterprise.speed;
+      break;
+    case(38):
+      enterprise.y -= enterprise.speed;
+      break;
+    case(40):
+      enterprise.y += enterprise.speed;
+      break;
+    case(32):
+    console.log("space was pressed")
+      fireMissile();
+      break;
   }
 };
 
 function borgAttack(){
   document.onkeypress = null;
-  clearInterval(animate);
   tractorBeam(context);
-  animate = setInterval(borgAttack,100);
-  for (var i = 0; i < 5; i++) {
-    if (collides(federation[i], borgShip)===true || collides(federation[i+5], borgShip)===true){
+    if (collides(federation, borgShip)===true){
       loseGame();
     }
-
     else{
-    movement(federation[i+5],100)(220-federation[i+5].x, 95-federation[i+5].y);
-    movement(federation[i],100)(220-federation[i].x, 95-federation[i].y);
+    movement(federation,100)(220-federation.x, 95-federation.y);
     }
-  }
 };
 
-  // moves ships towards BORG
+  // moves bullets towards BORG
 function movement(ent, offset){
   return function(dx, dy){
     context.clearRect(ent.x,ent.y,ent.width+offset,ent.height+offset);
@@ -139,17 +137,18 @@ function loseGame(){
   context.fillStyle = 'white';
   context.fillText("You have been assimilated.",300,500);
 };
-
 function init(){
-  federation.forEach(function(ships){
-    ships.draw();
-  })
+  document.onkeypress = detectKey;
+}
+
+function gameLoop(){
   drawBorg();
+  drawFed();
   borgHealth.draw();
   context.font = '10pt Droid Sans';
   context.fillStyle = 'white';
   context.fillText("BORG shield level", borgHealth.x,borgHealth.y+(borgHealth.height*2));
-  document.onkeypress = detectSpace;
 }
-setTimeout(gameLoop, 98000);
-}());
+init();
+animate = setInterval(gameLoop,1);
+// setTimeout(gameLoop, 98000);
