@@ -25,9 +25,12 @@ Entity.prototype.draw = function(){
   context.closePath();
   context.fill();   
 };
+Entity.prototype.destroy = function(){
+  context.clearRect(this.x, this.y, this.width, this.height);
+}
 
 borg = {x: 0, y:0, width: 400, height: 400, imageLocation: 'images/borg.png'};
-borgHealth = new Entity(spaceCanvas.width-200, 30, 200, 30, 0, 'green');
+borgHealth = new Entity(spaceCanvas.width-200, 30, 200, 30, 10, 'green');
 
   // loop to create federation ships
 for (i=0; i<5; i++){
@@ -57,7 +60,7 @@ drawBorg = function() {
 
 function fireMissile(){
   federation.forEach(function(ship){
-    missile = new Entity(ship.x-(ship.width/2), ship.y-(ship.height/2), 10,10,0.005, 'white');
+    missile = new Entity(ship.x-(ship.width/2), ship.y-(ship.height/2), 10,10,0.05, 'white');
     bullets.push(missile);
   })
     moveMissile();
@@ -68,31 +71,31 @@ function moveMissile(){
     for (var i = 0; i < 5; i++){
       if(collides(bullets[i],borgShip)===true || collides(bullets[i+5], borgShip)===true){
         bullets.forEach(function(pew){
-          context.clearRect(pew.x, pew.y, pew.width, pew.height);
+          pew.destroy();
         })
         clearInterval(animate);
         bullets.length = 0;
-        if (borgHealth.width===30){
-          attackBorg();
+        if (borgHealth.width < 50){
+          borgAttack();
         }
         else{
           loseHealth();
         }
       }
       else{
-        movement.left(bullets[i]);
-        movement.up(bullets[i+5]);
+        movement(bullets[i], 10)(-10,0);
+        movement(bullets[i+5], 10)(0,-10);
         animate = setInterval(moveMissile, 50);
       }
     }
 }
 };
 function loseHealth(){
-  context.clearRect(borgHealth.x, borgHealth.y, borgHealth.width, borgHealth.height);
-  if (borgHealth.width < 75){
+  borgHealth.destroy();
+  if (borgHealth.width < 100){
     borgHealth.color = 'red';
   }
-  borgHealth.width -= 10;
+  borgHealth.width -= borgHealth.speed;
   borgHealth.draw();
 }
 
@@ -102,61 +105,51 @@ function detectSpace(e){
   }
 };
 
-function attackBorg(){
+function borgAttack(){
   document.onkeypress = null;
   clearInterval(animate);
   tractorBeam(context);
-  animate = setInterval(attackBorg,100);
+  animate = setInterval(borgAttack,100);
   for (var i = 0; i < 5; i++) {
     if (collides(federation[i], borgShip)===true || collides(federation[i+5], borgShip)===true){
       loseGame();
     }
 
     else{
-    movement.capture(federation[i+5]);
-    movement.capture(federation[i]);
+    movement(federation[i+5],100)(220-federation[i+5].x, 95-federation[i+5].y);
+    movement(federation[i],100)(220-federation[i].x, 95-federation[i].y);
     }
   }
 };
 
-
-
   // moves ships towards BORG
-movement = {
-  capture: function(ship){
-    context.clearRect(ship.x, ship.y, ship.width+100, ship.height+100);
-    ship.x += (220-ship.x)*ship.speed;
-    ship.y += (95-ship.y)*ship.speed;
-    ship.draw(context); 
-  },
-  left: function(pew){
-    context.clearRect(pew.x, pew.y, pew.width*2, pew.height*2);
-    pew.x -= 10*pew.speed;
-    pew.draw(context);
-  },
-  up: function(pew){
-    context.clearRect(pew.x, pew.y, pew.width*2, pew.height*2);
-    pew.y -= 10*pew.speed;
-    pew.draw(context);    
+function movement(ent, offset){
+  return function(dx, dy){
+    context.clearRect(ent.x,ent.y,ent.width+offset,ent.height+offset);
+    ent.x += dx*ent.speed;
+    ent.y += dy*ent.speed;
+    ent.draw(context);
   }
-};
-
+}
 
 function loseGame(){
   clearInterval(animate);
   context.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height)
-  context.font = '30pt Ariel';
+  context.font = '30pt Droid Sans';
   context.fillStyle = 'white';
   context.fillText("You have been assimilated.",300,500);
 };
 
-function gameLoop(){
+function init(){
   federation.forEach(function(ships){
     ships.draw();
   })
   drawBorg();
   borgHealth.draw();
+  context.font = '10pt Droid Sans';
+  context.fillStyle = 'white';
+  context.fillText("BORG shield level", borgHealth.x,borgHealth.y+(borgHealth.height*2));
   document.onkeypress = detectSpace;
 }
-setTimeout(gameLoop, 100000);
+setTimeout(init, 10);
 }());
