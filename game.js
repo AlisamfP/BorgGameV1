@@ -158,5 +158,5 @@ function gameLoop(){
   borgHealth.draw();
   document.onkeypress = detectSpace;
 }
-setTimeout(gameLoop, 100000);
+setTimeout(gameLoop, 98000);
 }());

@@ -82,11 +82,11 @@ h1
 	text-shadow: -2px -2px 0 #ff6, 2px -2px 0 #ff6, -2px 2px 0 #ff6, 2px 2px 0 #ff6;
 	opacity: 0;
 	z-index: 1;
-	-webkit-animation: logo 5s ease-out 2.5s;
-	-moz-animation: logo 5s ease-out 2.5s;
-	-ms-animation: logo 5s ease-out 2.5s;
-	-o-animation: logo 5s ease-out 2.5s;
-	animation: logo 5s ease-out 2.5s;
+	-webkit-animation: logo 15s ease-out 2.5s;
+	-moz-animation: logo 15s ease-out 2.5s;
+	-ms-animation: logo 15s ease-out 2.5s;
+	-o-animation: logo 15s ease-out 2.5s;
+	animation: logo 15s ease-out 2.5s;
 	-webkit-animation-delay: 41s;
 	-moz-animation-delay: 41s;
 	-ms-animation-delay: 41s;
